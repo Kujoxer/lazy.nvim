@@ -25,19 +25,13 @@ function M.setup(opts)
   opts = M.extend({
     local_spec = false,
     change_detection = { enabled = false },
-    dev = {
-      patterns = vim.env.LAZY_DEV and vim.split(vim.env.LAZY_DEV, ",") or nil,
-    },
   }, opts)
 
   local args = {}
   local is_busted = false
-  local is_minitest = false
   for _, a in ipairs(_G.arg) do
     if a == "--busted" then
       is_busted = true
-    elseif a == "--minitest" then
-      is_minitest = true
     else
       table.insert(args, a)
     end
@@ -46,8 +40,6 @@ function M.setup(opts)
 
   if is_busted then
     opts = M.busted.setup(opts)
-  elseif is_minitest then
-    opts = M.minitest.setup(opts)
   end
 
   -- set stdpaths to use .tests
@@ -57,6 +49,7 @@ function M.setup(opts)
       vim.env[("XDG_%s_HOME"):format(name:upper())] = root .. "/" .. name
     end
   end
+
   vim.o.loadplugins = true
   require("lazy").setup(opts)
   if vim.g.colors_name == nil then
@@ -75,8 +68,6 @@ function M.setup(opts)
 
   if is_busted then
     M.busted.run()
-  elseif is_minitest then
-    M.minitest.run()
   end
 end
 
@@ -98,70 +89,6 @@ function M.repro(opts)
   M.setup(opts)
 end
 
-M.minitest = {}
-
-function M.minitest.run()
-  local Config = require("lazy.core.config")
-  -- disable termnial output for the tests
-  Config.options.headless = {}
-
-  if not require("lazy.core.config").headless() then
-    return vim.notify("busted can only run in headless mode. Please run with `nvim -l`", vim.log.levels.WARN)
-  end
-  package.path = package.path .. ";" .. vim.uv.cwd() .. "/tests/?.lua"
-  local Test = require("mini.test")
-  local expect = Test.expect
-  local _assert = assert
-  local Assert = {
-    __call = function(_, ...)
-      return _assert(...)
-    end,
-    same = expect.equality,
-    equal = expect.equality,
-    are = {
-      equal = expect.equality,
-    },
-    is_not = {
-      same = expect.no_equality,
-    },
-    is_not_nil = function(a)
-      return expect.no_equality(nil, a)
-    end,
-    is_true = function(a)
-      return expect.equality(true, a)
-    end,
-    is_false = function(a)
-      return expect.equality(false, a)
-    end,
-  }
-  Assert.__index = Assert
-  assert = setmetatable({}, Assert)
-  assert = require("luassert")
-  require("mini.test").run()
-end
-
----@param opts LazyConfig
-function M.minitest.setup(opts)
-  return M.extend({
-    spec = {
-      "lunarmodules/luassert",
-      {
-        "echasnovski/mini.test",
-        opts = {
-          collect = {
-            find_files = function()
-              return vim.fn.globpath("tests", "**/*_spec.lua", true, true)
-            end,
-          },
-          -- script_path = "tests/minit.lua",
-        },
-      },
-      { dir = vim.uv.cwd() },
-    },
-    rocks = { hererocks = true },
-  }, opts)
-end
-
 M.busted = {}
 
 function M.busted.run()
@@ -172,7 +99,6 @@ function M.busted.run()
   if not require("lazy.core.config").headless() then
     return vim.notify("busted can only run in headless mode. Please run with `nvim -l`", vim.log.levels.WARN)
   end
-  package.path = package.path .. ";" .. vim.uv.cwd() .. "/tests/?.lua"
   -- run busted
   return pcall(require("busted.runner"), {
     standalone = false,

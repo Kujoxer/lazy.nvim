@@ -35,9 +35,7 @@ end
 function M.fast_check(opts)
   opts = opts or {}
   for _, plugin in pairs(Config.plugins) do
-    -- don't check local plugins here, since we mark them as needing updates
-    -- only if local is behind upstream (if the git log task gives no output)
-    if plugin._.installed and not (plugin.pin or plugin._.is_local) then
+    if not plugin.pin and not plugin.dev and plugin._.installed then
       plugin._.updates = nil
       local info = Git.info(plugin.dir)
       local ok, target = pcall(Git.get_target, plugin)

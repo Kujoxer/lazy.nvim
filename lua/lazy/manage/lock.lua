@@ -42,7 +42,7 @@ function M.update()
       f:write(",\n")
     end
   end
-  f:write("\n}\n")
+  f:write("\n}")
   f:close()
 end
 

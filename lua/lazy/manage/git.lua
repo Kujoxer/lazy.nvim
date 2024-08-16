@@ -116,12 +116,6 @@ end
 ---@param plugin LazyPlugin
 ---@return GitInfo?
 function M.get_target(plugin)
-  if plugin._.is_local then
-    local info = M.info(plugin.dir)
-    local branch = assert(info and info.branch or M.get_branch(plugin))
-    return { branch = branch, commit = M.get_commit(plugin.dir, branch, true) }
-  end
-
   local branch = assert(M.get_branch(plugin))
 
   if plugin.commit then
@@ -150,6 +144,7 @@ function M.get_target(plugin)
       }
     end
   end
+  ---@diagnostic disable-next-line: return-type-mismatch
   return { branch = branch, commit = M.get_commit(plugin.dir, branch, true) }
 end
 

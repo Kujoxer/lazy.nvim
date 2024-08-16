@@ -34,17 +34,6 @@ M.defaults = {
     -- then set the below to false. This should work, but is NOT supported and will
     -- increase downloads a lot.
     filter = true,
-    -- rate of network related git operations (clone, fetch, checkout)
-    throttle = {
-      enabled = false, -- not enabled by default
-      -- max 2 ops every 5 seconds
-      rate = 2,
-      duration = 5 * 1000, -- in ms
-    },
-    -- Time in seconds to wait before running fetch again for a plugin.
-    -- Repeated update/check operations will not run again until this
-    -- cooldown period has passed.
-    cooldown = 0,
   },
   pkg = {
     enabled = true,
@@ -239,7 +228,7 @@ function M.hererocks()
   return M.options.rocks.hererocks
 end
 
-M.version = "11.14.1" -- x-release-please-version
+M.version = "11.10.0" -- x-release-please-version
 
 M.ns = vim.api.nvim_create_namespace("lazy")
 
@@ -264,10 +253,9 @@ M.mapleader = nil
 ---@type string
 M.maplocalleader = nil
 
-M.suspended = false
-
+local headless = #vim.api.nvim_list_uis() == 0
 function M.headless()
-  return not M.suspended and #vim.api.nvim_list_uis() == 0
+  return headless
 end
 
 ---@param opts? LazyConfig
@@ -295,9 +283,6 @@ function M.setup(opts)
 
   M.me = debug.getinfo(1, "S").source:sub(2)
   M.me = Util.norm(vim.fn.fnamemodify(M.me, ":p:h:h:h:h"))
-  local lib = vim.fn.fnamemodify(vim.v.progpath, ":p:h:h") .. "/lib"
-  lib = vim.uv.fs_stat(lib .. "64") and (lib .. "64") or lib
-  lib = lib .. "/nvim"
   if M.options.performance.rtp.reset then
     ---@type vim.Option
     vim.opt.rtp = {
@@ -305,7 +290,7 @@ function M.setup(opts)
       vim.fn.stdpath("data") .. "/site",
       M.me,
       vim.env.VIMRUNTIME,
-      lib,
+      vim.fn.fnamemodify(vim.v.progpath, ":p:h:h") .. "/lib/nvim",
       vim.fn.stdpath("config") .. "/after",
     }
   end
@@ -351,12 +336,6 @@ function M.setup(opts)
             if plugin then
               require("lazy").pkg({ plugins = { plugin } })
             end
-          end,
-        })
-
-        vim.api.nvim_create_autocmd({ "VimSuspend", "VimResume" }, {
-          callback = function(ev)
-            M.suspended = ev.event == "VimSuspend"
           end,
         })
       end,

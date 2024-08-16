@@ -1,19 +1,5 @@
+
 return {
-  -- the colorscheme should be available when starting Neovim
-  {
-    "folke/tokyonight.nvim",
-    lazy = false, -- make sure we load this during startup if it is your main colorscheme
-    priority = 1000, -- make sure to load this before all the other start plugins
-    config = function()
-      -- load the colorscheme here
-      vim.cmd([[colorscheme tokyonight]])
-    end,
-  },
-
-  -- I have a separate config.mappings file where I require which-key.
-  -- With lazy the plugin will be automatically loaded when it is required somewhere
-  { "folke/which-key.nvim", lazy = true },
-
   {
     "nvim-neorg/neorg",
     -- lazy-load on filetype
@@ -36,20 +22,6 @@ return {
     end,
   },
 
-  {
-    "hrsh7th/nvim-cmp",
-    -- load cmp on InsertEnter
-    event = "InsertEnter",
-    -- these dependencies will only be loaded when cmp loads
-    -- dependencies are always lazy-loaded unless specified otherwise
-    dependencies = {
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-    },
-    config = function()
-      -- ...
-    end,
-  },
 
   -- if some code requires a module from an unloaded plugin, it will be automatically loaded.
   -- So for api plugins like devicons, we can always set lazy=true
@@ -83,5 +55,5 @@ return {
   -- local plugins can also be configured with the dev option.
   -- This will use {config.dev.path}/noice.nvim/ instead of fetching it from GitHub
   -- With the dev option, you can easily switch between the local and installed version of a plugin
-  { "folke/noice.nvim", dev = true },
+  -- lazy.nvim
 }

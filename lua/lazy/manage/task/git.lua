@@ -1,53 +1,7 @@
-local Async = require("lazy.async")
 local Config = require("lazy.core.config")
 local Git = require("lazy.manage.git")
 local Lock = require("lazy.manage.lock")
 local Util = require("lazy.util")
-
-local throttle = {}
-throttle.running = 0
-throttle.waiting = {} ---@type Async[]
-throttle.timer = vim.uv.new_timer()
-
-function throttle.next()
-  throttle.running = 0
-  while #throttle.waiting > 0 and throttle.running < Config.options.git.throttle.rate do
-    ---@type Async
-    local task = table.remove(throttle.waiting, 1)
-    task:resume()
-    throttle.running = throttle.running + 1
-  end
-  if throttle.running == 0 then
-    throttle.timer:stop()
-  end
-end
-
-function throttle.wait()
-  if not Config.options.git.throttle.enabled then
-    return
-  end
-  if not throttle.timer:is_active() then
-    throttle.timer:start(0, Config.options.git.throttle.duration, vim.schedule_wrap(throttle.next))
-  end
-  local running = Async.running()
-  if throttle.running < Config.options.git.throttle.rate then
-    throttle.running = throttle.running + 1
-  else
-    table.insert(throttle.waiting, running)
-    coroutine.yield("waiting")
-    running:suspend()
-    coroutine.yield("")
-  end
-end
-
----@param plugin LazyPlugin
-local function cooldown(plugin)
-  if not plugin._.last_check then
-    return false
-  end
-  local delta = (vim.uv.now() - plugin._.last_check) / 1000
-  return delta < Config.options.git.cooldown
-end
 
 ---@type table<string, LazyTaskDef>
 local M = {}
@@ -78,13 +32,11 @@ M.log = {
       "--no-show-signature",
     }
 
-    local info, target
-
     if opts.updated then
       table.insert(args, self.plugin._.updated.from .. ".." .. (self.plugin._.updated.to or "HEAD"))
     elseif opts.check then
-      info = assert(Git.info(self.plugin.dir))
-      target = assert(Git.get_target(self.plugin))
+      local info = assert(Git.info(self.plugin.dir))
+      local target = assert(Git.get_target(self.plugin))
       if not target.commit then
         for k, v in pairs(target) do
           error(k .. " '" .. v .. "' not found")
@@ -92,17 +44,15 @@ M.log = {
         error("no target commit found")
       end
       assert(target.commit, self.plugin.name .. " " .. target.branch)
-      if not self.plugin._.is_local then
-        if Git.eq(info, target) then
-          if Config.options.checker.check_pinned then
-            local last_commit = Git.get_commit(self.plugin.dir, target.branch, true)
-            if not Git.eq(info, { commit = last_commit }) then
-              self.plugin._.outdated = true
-            end
+      if Git.eq(info, target) then
+        if Config.options.checker.check_pinned then
+          local last_commit = Git.get_commit(self.plugin.dir, target.branch, true)
+          if not Git.eq(info, { commit = last_commit }) then
+            self.plugin._.outdated = true
           end
-        else
-          self.plugin._.updates = { from = info, to = target }
         end
+      else
+        self.plugin._.updates = { from = info, to = target }
       end
       table.insert(args, info.commit .. ".." .. target.commit)
     else
@@ -113,14 +63,6 @@ M.log = {
       args = args,
       cwd = self.plugin.dir,
     })
-
-    -- for local plugins, mark as needing updates only if local is
-    -- behind upstream, i.e. if git log gave no output
-    if opts.check and self.plugin._.is_local then
-      if not vim.tbl_isempty(self:get_log()) then
-        self.plugin._.updates = { from = info, to = target }
-      end
-    end
   end,
 }
 
@@ -130,7 +72,6 @@ M.clone = {
   end,
   ---@async
   run = function(self)
-    throttle.wait()
     local args = {
       "clone",
       self.plugin.url,
@@ -275,12 +216,11 @@ M.status = {
 -- fetches all needed origin branches
 M.fetch = {
   skip = function(plugin)
-    return not plugin._.installed or plugin._.is_local or cooldown(plugin)
+    return not plugin._.installed or plugin._.is_local
   end,
 
   ---@async
   run = function(self)
-    throttle.wait()
     local args = {
       "fetch",
       "--recurse-submodules",
@@ -296,11 +236,6 @@ M.fetch = {
     self:spawn("git", {
       args = args,
       cwd = self.plugin.dir,
-      on_exit = function(ok)
-        if ok then
-          self.plugin._.last_check = vim.uv.now()
-        end
-      end,
     })
   end,
 }
@@ -315,7 +250,6 @@ M.checkout = {
   ---@async
   ---@param opts {lockfile?:boolean}
   run = function(self, opts)
-    throttle.wait()
     local info = assert(Git.info(self.plugin.dir))
     local target = assert(Git.get_target(self.plugin))
 

@@ -85,7 +85,7 @@ function M.create()
     require("lazy.manage.process").abort()
     require("lazy.async").abort()
     return ViewConfig.keys.abort
-  end, { silent = true, buffer = self.buf, expr = true, desc = "Abort" })
+  end, { silent = true, buffer = self.buf, expr = true })
 
   vim.keymap.set("n", "gx", "K", { buffer = self.buf, remap = true })
 
@@ -110,7 +110,7 @@ function M.create()
       self.state.plugin = open and selected or nil
       self:update()
     end
-  end, "Details")
+  end)
 
   self:on_key(ViewConfig.keys.next, function()
     local cursor = vim.api.nvim_win_get_cursor(self.view.win)
@@ -121,7 +121,7 @@ function M.create()
         return
       end
     end
-  end, "Next Plugin")
+  end)
 
   self:on_key(ViewConfig.keys.prev, function()
     local cursor = vim.api.nvim_win_get_cursor(self.view.win)
@@ -132,14 +132,14 @@ function M.create()
         return
       end
     end
-  end, "Prev Plugin")
+  end)
 
   self:on_key(ViewConfig.keys.profile_sort, function()
     if self.state.mode == "profile" then
       self.state.profile.sort_time_taken = not self.state.profile.sort_time_taken
       self:update()
     end
-  end, "Sort Profile")
+  end)
 
   self:on_key(ViewConfig.keys.profile_filter, function()
     if self.state.mode == "profile" then
@@ -159,18 +159,17 @@ function M.create()
         end
       end)
     end
-  end, "Filter Profile")
+  end)
 
   for lhs, rhs in pairs(Config.options.ui.custom_keys) do
     if rhs then
       local handler = type(rhs) == "table" and rhs[1] or rhs
-      local desc = type(rhs) == "table" and rhs.desc or nil
       self:on_key(lhs, function()
         local plugin = self.render:get_plugin()
         if plugin then
           handler(plugin)
         end
-      end, desc)
+      end)
     end
   end
 
@@ -220,17 +219,17 @@ function M:setup_patterns()
     ["(https?://%S+)"] = function(url)
       Util.open(url)
     end,
-  }, self.hover, "Hover")
+  }, self.hover)
   self:on_pattern(ViewConfig.keys.diff, {
     [commit_pattern] = function(hash)
       self:diff({ commit = hash })
     end,
-  }, self.diff, "Diff")
+  }, self.diff)
   self:on_pattern(ViewConfig.commands.restore.key_plugin, {
     [commit_pattern] = function(hash)
       self:restore({ commit = hash })
     end,
-  }, self.restore, "Restore")
+  }, self.restore)
 end
 
 ---@param opts? {commit:string}
@@ -295,8 +294,7 @@ end
 ---@param key string
 ---@param patterns table<string, fun(str:string)>
 ---@param fallback? fun(self)
----@param desc? string
-function M:on_pattern(key, patterns, fallback, desc)
+function M:on_pattern(key, patterns, fallback)
   self:on_key(key, function()
     local line = vim.api.nvim_get_current_line()
     local pos = vim.api.nvim_win_get_cursor(0)
@@ -318,7 +316,7 @@ function M:on_pattern(key, patterns, fallback, desc)
     if fallback then
       fallback(self)
     end
-  end, desc)
+  end)
 end
 
 function M:setup_modes()

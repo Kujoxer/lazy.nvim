@@ -4,6 +4,8 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+vim.opt.mouse = 'a'           -- Включить поддержку мыши
+
 vim.opt.scrolloff = 10
 
 -- [[ Подсветка скопированного текста ]]

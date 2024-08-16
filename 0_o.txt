@@ -1,0 +1,21 @@
+-- [[ My func ]]
+vim.g.background_transparent = true
+-- Функция для переключения фона
+function ToggleBackground()
+  if vim.g.background_transparent == true then
+    vim.g.background_transparent = false
+    -- Устанавливаем тёмный фон
+    vim.cmd("highlight Normal guibg=Dark")
+  else
+    vim.g.background_transparent = true
+    vim.cmd("highlight Normal guibg=NONE")
+  end
+end
+-- Привязка функции к leader + b
+vim.api.nvim_set_keymap(
+  "n",
+  "<leader>b",
+  ":lua ToggleBackground()<CR>",
+  { noremap = true, silent = true, desc = "Toggle Background" }
+)
+

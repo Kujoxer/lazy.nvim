@@ -31,7 +31,6 @@
 </div>
 
 
-
 **lazy.nvim** is a modern plugin manager for Neovim.
 
 ![image](https://user-images.githubusercontent.com/292349/208301737-68fb279c-ba70-43ef-a369-8c3e8367d6b1.png)

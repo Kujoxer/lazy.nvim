@@ -19,7 +19,7 @@ vim.opt.updatetime = 250      -- Время ожидания обновлени�
 vim.g.have_nerd_font = true      -- Indicates that a Nerd Font is available for use
 vim.opt.termguicolors = true     -- Enables 24-bit RGB color in the terminal UI
 vim.opt.colorcolumn = "80"       -- Highlights the 80th column for line length guidance
-vim.opt.signcolumn = "no"        -- Disables the sign column (used for git signs, linting, etc.)
+vim.opt.signcolumn = "auto"        -- Disables the sign column (used for git signs, linting, etc.)
 vim.opt.wrap = false             -- Disables line wrapping
 vim.opt.cursorline = true        -- Show which line your cursor is on
 

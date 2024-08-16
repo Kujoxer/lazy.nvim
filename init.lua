@@ -7,6 +7,9 @@ vim.g.maplocalleader = ' '
 vim.opt.mouse = 'a'           -- Включить поддержку мыши
 
 vim.opt.scrolloff = 10
+vim.opt.sidescrolloff = 8
+
+vim.g.netrw_banner = 0
 
 -- [[ Подсветка скопированного текста ]]
 vim.api.nvim_create_autocmd('TextYankPost', {
